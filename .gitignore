@@ -1,0 +1,36 @@
+# Dependency directories (installed by Composer/NPM - can be regenerated)
+/vendor
+/node_modules
+
+# Environment file (contains sensitive credentials)
+/.env
+
+# Application cache and logs
+/storage/framework/cache/*
+/storage/framework/views/*
+/storage/framework/sessions/*
+/storage/logs/*
+
+# Compiled assets
+/public/css
+/public/js
+/public/storage
+/public/hot
+
+# Development tools
+/.idea
+/.vscode
+/.vagrant
+Homestead.json
+Homestead.yaml
+
+# Debug files
+npm-debug.log
+yarn-error.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Local development environment
+docker-compose.override.yml
