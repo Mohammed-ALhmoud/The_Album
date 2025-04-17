@@ -20,22 +20,22 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy project files to container
-COPY . /var/www
+# Copy project files to container (including .env if it exists)
+COPY . .
 
 # Create data directory for SQLite
 RUN mkdir -p /var/data
 RUN touch /var/data/database.sqlite
 RUN chown -R www-data:www-data /var/data
 
+# Create .env file if it doesn't exist
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
 # Install Laravel dependencies
 RUN composer install --optimize-autoloader
 
-# Generate application key if not set
+# Generate application key
 RUN php artisan key:generate --force
-
-# Run migrations
-RUN php artisan migrate --force
 
 # Set appropriate permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
