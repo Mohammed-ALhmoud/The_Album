@@ -20,28 +20,42 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy project files to container (including .env if it exists)
+# Copy all files
 COPY . .
 
-# Create data directory for SQLite
-RUN mkdir -p /var/data
-RUN touch /var/data/database.sqlite
-RUN chown -R www-data:www-data /var/data
+# Create data directory and database file with proper permissions
+RUN mkdir -p /var/data && \
+    touch /var/data/database.sqlite && \
+    chown -R www-data:www-data /var/data && \
+    chmod 775 /var/data && \
+    chmod 664 /var/data/database.sqlite
 
-# Create .env file if it doesn't exist
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
+# Create .env if missing and set database path
+RUN if [ ! -f .env ]; then cp .env.example .env; fi && \
+    sed -i "s|DB_DATABASE=.*|DB_DATABASE=/var/data/database.sqlite|g" .env
 
-# Install Laravel dependencies
-RUN composer install --optimize-autoloader
+# Install dependencies
+RUN composer install --optimize-autoloader --no-dev
 
 # Generate application key
 RUN php artisan key:generate --force
 
-# Set appropriate permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Verify database connection
+RUN php artisan tinker --execute='try { DB::connection()->getPdo(); echo "DB Connected!"; } catch (\Exception $e) { exit("DB Error: ".$e->getMessage()); }'
+
+# Run migrations
+RUN php artisan migrate --force
+
+# Set permissions
+RUN chown -R www-data:www-data \
+    /var/www/storage \
+    /var/www/bootstrap/cache
+
+# Build assets
+RUN npm install && npm run build
 
 # Expose port
 EXPOSE 10000
 
-# Start Laravel server
+# Start server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
